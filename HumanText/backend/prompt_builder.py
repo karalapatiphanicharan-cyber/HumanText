@@ -108,3 +108,22 @@ def get_prompt(mode, tone, strength, text):
 
     builder = builders.get(mode, build_humanize_prompt)
     return builder(selected_tone, selected_strength, text)
+
+def build_analysis_prompt(text):
+    return f"""Analyze the following text for writing quality and provide a detailed assessment.
+
+Your response MUST be a valid JSON object with the following structure:
+{{
+  "human_likeness": <0-100 score>,
+  "clarity": <0-100 score>,
+  "engagement": <0-100 score>,
+  "readability": <0-100 score>,
+  "professionalism": <0-100 score>,
+  "strengths": ["list of 3-5 positive observations"],
+  "suggestions": ["list of 3-5 improvement tips"]
+}}
+
+Return ONLY the raw JSON object. Do not include markdown formatting or any other text.
+
+Text to analyze:
+{text}"""

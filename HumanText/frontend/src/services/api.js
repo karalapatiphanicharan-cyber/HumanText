@@ -26,3 +26,25 @@ export const humanizeText = async (text, mode = 'humanize', strength = 'medium',
     throw error;
   }
 };
+
+export const analyzeText = async (text) => {
+  try {
+    const response = await fetch(`${API_URL}/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to analyze text');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Analysis API Error:', error);
+    throw error;
+  }
+};

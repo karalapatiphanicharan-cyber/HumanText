@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MousePointer2 } from 'lucide-react';
+import { MousePointer2, Sparkles } from 'lucide-react';
 import Header from './components/Header';
 import TextInput from './components/TextInput';
 import ComparisonView from './components/ComparisonView';
 import AnalyticsGrid from './components/AnalyticsGrid';
 import SettingsPanel from './components/SettingsPanel';
 import ModeSelector from './components/ModeSelector';
-import { humanizeText } from './services/api';
+import AnalysisDashboard from './components/AnalysisDashboard';
+import AnalysisHistory from './components/AnalysisHistory';
+import { humanizeText, analyzeText } from './services/api';
 
 const EXAMPLES = [
   {
@@ -34,32 +36,121 @@ function App() {
   const [strength, setStrength] = useState('medium');
   const [tone, setTone] = useState('professional');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState('');
+  const [analysis, setAnalysis] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  // Load history on mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('human_text_history');
+    if (savedHistory) {
+      try {
+        setHistory(JSON.parse(savedHistory));
+      } catch (e) {
+        console.error('Failed to parse history', e);
+      }
+    }
+  }, []);
 
   const handleProcess = async () => {
     if (!input.trim()) return;
 
     setIsLoading(true);
+    setIsAnalyzing(true);
     setError('');
+    setAnalysis(null);
 
     try {
       const data = await humanizeText(input, mode, strength, tone);
       setOutput(data.humanized_text);
 
+      // Run analysis
+      const analysisData = await analyzeText(data.humanized_text);
+      setAnalysis(analysisData);
+
+      // Save to history
+      const overallScore = Math.round(
+        (analysisData.human_likeness +
+          analysisData.clarity +
+          analysisData.engagement +
+          analysisData.readability +
+          analysisData.professionalism) / 5
+      );
+
+      const newHistoryItem = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        mode,
+        overallScore,
+        originalText: input,
+        rewrittenText: data.humanized_text,
+        analysis: analysisData,
+        settings: { tone, strength }
+      };
+
+      const updatedHistory = [newHistoryItem, ...history].slice(0, 5);
+      setHistory(updatedHistory);
+      localStorage.setItem('human_text_history', JSON.stringify(updatedHistory));
+
       // Smooth scroll to results
       setTimeout(() => {
-        window.scrollTo({ top: 900, behavior: 'smooth' });
+        const resultsEl = document.getElementById('results-section');
+        if (resultsEl) {
+          resultsEl.scrollIntoView({ behavior: 'smooth' });
+        }
       }, 100);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
+      setIsAnalyzing(false);
     }
+  };
+
+  const handleHistorySelect = (item) => {
+    setInput(item.originalText);
+    setOutput(item.rewrittenText);
+    setAnalysis(item.analysis);
+    setMode(item.mode);
+    setTone(item.settings?.tone || 'professional');
+    setStrength(item.settings?.strength || 'medium');
+
+    setTimeout(() => {
+      document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const handleExport = () => {
+    if (!analysis || !output) return;
+
+    const exportData = {
+      originalText: input,
+      rewrittenText: output,
+      analysis,
+      metadata: {
+        mode,
+        tone,
+        strength,
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `humantext-analysis-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleReset = () => {
     setInput('');
     setOutput('');
+    setAnalysis(null);
     setMode('humanize');
     setStrength('medium');
     setTone('professional');
@@ -177,18 +268,59 @@ function App() {
             )}
           </div>
 
-          <AnimatePresence mode="wait">
-            {output && (
-              <ComparisonView
-                key="comparison"
-                original={input}
-                humanized={output}
-                mode={mode}
-                tone={tone}
-                strength={strength}
+          <div id="results-section" className="scroll-mt-12">
+            <AnimatePresence mode="wait">
+              {output && (
+                <div className="space-y-12">
+                  <ComparisonView
+                    key="comparison"
+                    original={input}
+                    humanized={output}
+                    mode={mode}
+                    tone={tone}
+                    strength={strength}
+                  />
+
+                  {isAnalyzing && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="glass p-12 rounded-[40px] flex flex-col items-center justify-center space-y-6"
+                    >
+                      <div className="relative">
+                        <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                        <Sparkles className="absolute inset-0 m-auto text-blue-400 animate-pulse" size={24} />
+                      </div>
+                      <div className="text-center">
+                        <h3 className="text-xl font-bold text-white mb-2">Analyzing Content...</h3>
+                        <p className="text-slate-500 max-w-xs">Our AI is evaluating clarity, engagement, and human-likeness scores.</p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {analysis && !isAnalyzing && (
+                    <AnalysisDashboard
+                      analysis={analysis}
+                      onExport={handleExport}
+                    />
+                  )}
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {history.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="pt-12 border-t border-white/5"
+            >
+              <AnalysisHistory
+                history={history}
+                onSelect={handleHistorySelect}
               />
-            )}
-          </AnimatePresence>
+            </motion.div>
+          )}
         </motion.main>
 
         <footer className="mt-24 text-center text-slate-600 text-sm font-medium tracking-wide">
