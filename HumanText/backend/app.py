@@ -25,6 +25,8 @@ if api_key:
 
 class HumanizeRequest(BaseModel):
     text: str
+    strength: str = "medium"
+    tone: str = "professional"
 
 class HumanizeResponse(BaseModel):
     humanized_text: str
@@ -41,18 +43,33 @@ async def humanize_text(request: HumanizeRequest):
     try:
         model = genai.GenerativeModel('gemini-pro')
 
-        prompt = f"""Rewrite the following content so it sounds natural,
-human-written, engaging, and conversational.
+        strength_instructions = {
+            "light": "Perform minimal rewriting. Preserve original wording as much as possible while slightly improving the flow.",
+            "medium": "Perform balanced rewriting. Improve readability and flow while keeping the structure natural.",
+            "strong": "Aggressively humanize the content. Rewrite it heavily to ensure it sounds entirely human-written while strictly preserving the original meaning."
+        }
 
-Requirements:
+        tone_instructions = {
+            "professional": "Use a formal business style.",
+            "casual": "Use a conversational and relaxed tone.",
+            "academic": "Use a research-oriented and educational tone.",
+            "friendly": "Use a warm and approachable tone.",
+            "linkedin": "Use a professional networking style suitable for LinkedIn."
+        }
 
-* Preserve original meaning
-* Preserve factual accuracy
-* Maintain similar length
-* Improve readability
-* Remove robotic AI wording
-* Avoid repetitive AI phrases
-* Make it feel written by a real person
+        selected_strength = strength_instructions.get(request.strength.lower(), strength_instructions["medium"])
+        selected_tone = tone_instructions.get(request.tone.lower(), tone_instructions["professional"])
+
+        prompt = f"""Rewrite the following content to sound natural, human-written, and engaging.
+
+Specific Requirements:
+* Strength: {selected_strength}
+* Tone: {selected_tone}
+* Preserve original meaning and factual accuracy.
+* Maintain similar length.
+* Improve readability and remove robotic AI wording.
+* Avoid repetitive AI phrases.
+* Make it feel like it was written by a real person.
 
 Content:
 {request.text}
