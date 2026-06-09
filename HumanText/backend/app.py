@@ -39,7 +39,7 @@ async def humanize_text(request: HumanizeRequest):
         return HumanizeResponse(humanized_text=f"[MOCK] Humanized version of: {request.text}")
 
     try:
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-2.5-flash')
 
         prompt = f"""Rewrite the following content so it sounds natural,
 human-written, engaging, and conversational.
