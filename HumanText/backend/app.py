@@ -2,9 +2,9 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import google.generativeai as genai
 from dotenv import load_dotenv
 import prompt_builder
+from services.gemini_service import gemini_service
 
 load_dotenv()
 
@@ -18,11 +18,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Configure Gemini API
-api_key = os.getenv("GEMINI_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
 
 class HumanizeRequest(BaseModel):
     text: str
@@ -50,9 +45,12 @@ async def humanize_text(request: HumanizeRequest):
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty")
 
-    if not api_key:
-        # For development/testing purposes when API key is missing
-        return HumanizeResponse(humanized_text=f"[MOCK] {request.mode.capitalize()}d version of: {request.text}")
+    prompt = prompt_builder.get_prompt(
+        mode=request.mode,
+        tone=request.tone,
+        strength=request.strength,
+        text=request.text
+    )
 
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
@@ -75,16 +73,7 @@ async def analyze_text(request: AnalysisRequest):
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty")
 
-    if not api_key:
-        return AnalysisResponse(
-            human_likeness=85,
-            clarity=90,
-            engagement=75,
-            readability=88,
-            professionalism=92,
-            strengths=["Clear structure", "Professional tone", "Good grammar"],
-            suggestions=["Use more active voice", "Vary sentence length"]
-        )
+    prompt = prompt_builder.build_analysis_prompt(request.text)
 
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
@@ -102,7 +91,8 @@ async def analyze_text(request: AnalysisRequest):
         import json
         analysis_data = json.loads(text_response)
         return AnalysisResponse(**analysis_data)
-
+    except HTTPException as e:
+        raise e
     except Exception as e:
         print(f"Analysis Error: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")

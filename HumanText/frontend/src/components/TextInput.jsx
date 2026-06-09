@@ -39,9 +39,9 @@ const TextInput = ({ value, onChange, onHumanize, isLoading, mode = 'humanize' }
         whileTap={!isLoading && value.trim() ? { scale: 0.98 } : {}}
         onClick={onHumanize}
         disabled={isLoading || !value.trim()}
-        className={`relative overflow-hidden py-5 px-10 rounded-2xl font-bold text-white transition-all flex items-center justify-center space-x-3 shadow-xl ${
+        className={`relative overflow-hidden py-5 px-10 rounded-2xl font-bold text-white transition-all flex items-center justify-center space-x-3 shadow-xl ring-offset-2 ring-offset-dark focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
           isLoading || !value.trim()
-            ? 'bg-slate-800 cursor-not-allowed opacity-50'
+            ? 'bg-slate-800 cursor-not-allowed opacity-50 grayscale'
             : 'bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600'
         }`}
       >
