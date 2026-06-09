@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import TextInput from './components/TextInput';
-import OutputBox from './components/OutputBox';
-import StatsCard from './components/StatsCard';
+import ComparisonView from './components/ComparisonView';
+import AnalyticsGrid from './components/AnalyticsGrid';
 import SettingsPanel from './components/SettingsPanel';
 import { humanizeText } from './services/api';
 
@@ -24,6 +24,10 @@ function App() {
     try {
       const data = await humanizeText(input, strength, tone);
       setOutput(data.humanized_text);
+      // Smooth scroll to results
+      setTimeout(() => {
+        window.scrollTo({ top: 800, behavior: 'smooth' });
+      }, 100);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
@@ -37,6 +41,7 @@ function App() {
     setStrength('medium');
     setTone('professional');
     setError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -48,7 +53,7 @@ function App() {
         <div className="blob blob-3" />
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 pb-24 relative z-10">
+      <div className="max-w-6xl mx-auto px-6 pb-24 relative z-10">
         <Header />
 
         <motion.main
@@ -89,7 +94,9 @@ function App() {
               onReset={handleReset}
             />
 
-            <StatsCard text={input} />
+            <div className="mb-10">
+              <AnalyticsGrid text={input} title="Current Input Stats" />
+            </div>
 
             <TextInput
               value={input}
@@ -110,7 +117,11 @@ function App() {
             )}
           </div>
 
-          <OutputBox text={output} />
+          <AnimatePresence mode="wait">
+            {output && (
+              <ComparisonView key="comparison" original={input} humanized={output} />
+            )}
+          </AnimatePresence>
         </motion.main>
 
         <footer className="mt-24 text-center text-slate-600 text-sm font-medium tracking-wide">
