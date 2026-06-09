@@ -53,10 +53,18 @@ async def humanize_text(request: HumanizeRequest):
     )
 
     try:
-        humanized_text = await gemini_service.generate_content(prompt)
-        return HumanizeResponse(humanized_text=humanized_text)
-    except HTTPException as e:
-        raise e
+        model = genai.GenerativeModel('gemini-2.5-flash')
+
+        prompt = prompt_builder.get_prompt(
+            mode=request.mode,
+            tone=request.tone,
+            strength=request.strength,
+            text=request.text
+        )
+
+        response = model.generate_content(prompt)
+        return HumanizeResponse(humanized_text=response.text)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -68,7 +76,20 @@ async def analyze_text(request: AnalysisRequest):
     prompt = prompt_builder.build_analysis_prompt(request.text)
 
     try:
-        analysis_data = await gemini_service.generate_json(prompt)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        prompt = prompt_builder.build_analysis_prompt(request.text)
+
+        response = model.generate_content(prompt)
+        text_response = response.text
+
+        # Clean response if it contains markdown markers
+        if text_response.startswith("```json"):
+            text_response = text_response.strip("```json").strip("```").strip()
+        elif text_response.startswith("```"):
+            text_response = text_response.strip("```").strip()
+
+        import json
+        analysis_data = json.loads(text_response)
         return AnalysisResponse(**analysis_data)
     except HTTPException as e:
         raise e
