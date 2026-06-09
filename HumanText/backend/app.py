@@ -87,7 +87,7 @@ async def analyze_text(request: AnalysisRequest):
         )
 
     try:
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         prompt = prompt_builder.build_analysis_prompt(request.text)
 
         response = model.generate_content(prompt)
