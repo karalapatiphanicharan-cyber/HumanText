@@ -4,11 +4,14 @@ import Header from './components/Header';
 import TextInput from './components/TextInput';
 import OutputBox from './components/OutputBox';
 import StatsCard from './components/StatsCard';
+import SettingsPanel from './components/SettingsPanel';
 import { humanizeText } from './services/api';
 
 function App() {
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
+  const [strength, setStrength] = useState('medium');
+  const [tone, setTone] = useState('professional');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,13 +22,21 @@ function App() {
     setError('');
 
     try {
-      const data = await humanizeText(input);
+      const data = await humanizeText(input, strength, tone);
       setOutput(data.humanized_text);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleReset = () => {
+    setInput('');
+    setOutput('');
+    setStrength('medium');
+    setTone('professional');
+    setError('');
   };
 
   return (
@@ -49,6 +60,34 @@ function App() {
           <div className="glass p-10 rounded-[40px] shadow-2xl relative overflow-hidden group">
             {/* Inner Glow */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-blue-500/10 blur-[60px] rounded-full group-hover:bg-blue-500/20 transition-colors duration-700" />
+
+            {/* Active Badges */}
+            <div className="flex flex-wrap gap-3 mb-8">
+              <motion.div
+                key={strength}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest"
+              >
+                {strength}
+              </motion.div>
+              <motion.div
+                key={tone}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-bold uppercase tracking-widest"
+              >
+                {tone}
+              </motion.div>
+            </div>
+
+            <SettingsPanel
+              strength={strength}
+              setStrength={setStrength}
+              tone={tone}
+              setTone={setTone}
+              onReset={handleReset}
+            />
 
             <StatsCard text={input} />
 
