@@ -1,8 +1,27 @@
 import React from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Zap, Maximize2, Minimize2, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const TextInput = ({ value, onChange, onHumanize, isLoading }) => {
+const MODE_ICONS = {
+  humanize: Sparkles,
+  simplify: Zap,
+  expand: Maximize2,
+  shorten: Minimize2,
+  grammar: CheckCircle2,
+};
+
+const MODE_LABELS = {
+  humanize: 'Humanize Content',
+  simplify: 'Simplify Content',
+  expand: 'Expand Content',
+  shorten: 'Shorten Content',
+  grammar: 'Fix Grammar',
+};
+
+const TextInput = ({ value, onChange, onHumanize, isLoading, mode = 'humanize' }) => {
+  const Icon = MODE_ICONS[mode] || Sparkles;
+  const label = MODE_LABELS[mode] || 'Process Content';
+
   return (
     <div className="flex flex-col space-y-6">
       <div className="relative group">
@@ -40,14 +59,14 @@ const TextInput = ({ value, onChange, onHumanize, isLoading }) => {
             </motion.div>
           ) : (
             <motion.div
-              key="default"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              key={mode}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="flex items-center space-x-3"
             >
-              <Sparkles size={20} />
-              <span className="tracking-wide uppercase text-sm">Humanize Content</span>
+              <Icon size={20} />
+              <span className="tracking-wide uppercase text-sm">{label}</span>
             </motion.div>
           )}
         </AnimatePresence>

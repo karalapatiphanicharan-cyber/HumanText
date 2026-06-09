@@ -1,32 +1,54 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MousePointer2 } from 'lucide-react';
 import Header from './components/Header';
 import TextInput from './components/TextInput';
 import ComparisonView from './components/ComparisonView';
 import AnalyticsGrid from './components/AnalyticsGrid';
 import SettingsPanel from './components/SettingsPanel';
+import ModeSelector from './components/ModeSelector';
 import { humanizeText } from './services/api';
+
+const EXAMPLES = [
+  {
+    label: 'Humanize Example',
+    mode: 'humanize',
+    text: 'Artificial intelligence is fundamentally changing the way businesses operate by automating repetitive tasks and providing data-driven insights. This technology allows organizations to optimize their efficiency and reduce costs while improving decision-making processes across various departments.'
+  },
+  {
+    label: 'Simplify Example',
+    mode: 'simplify',
+    text: 'The implementation of automated systems facilitated operational optimization within the corporate infrastructure. Consequently, the organization experienced a significant augmentation in productivity metrics and a simultaneous diminution in overhead expenditures.'
+  },
+  {
+    label: 'Expand Example',
+    mode: 'expand',
+    text: 'AI helps businesses.'
+  },
+];
 
 function App() {
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
+  const [mode, setMode] = useState('humanize');
   const [strength, setStrength] = useState('medium');
   const [tone, setTone] = useState('professional');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleHumanize = async () => {
+  const handleProcess = async () => {
     if (!input.trim()) return;
 
     setIsLoading(true);
     setError('');
 
     try {
-      const data = await humanizeText(input, strength, tone);
+      const data = await humanizeText(input, mode, strength, tone);
       setOutput(data.humanized_text);
+
       // Smooth scroll to results
       setTimeout(() => {
-        window.scrollTo({ top: 800, behavior: 'smooth' });
+        window.scrollTo({ top: 900, behavior: 'smooth' });
       }, 100);
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
@@ -38,10 +60,16 @@ function App() {
   const handleReset = () => {
     setInput('');
     setOutput('');
+    setMode('humanize');
     setStrength('medium');
     setTone('professional');
     setError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const fillExample = (example) => {
+    setInput(example.text);
+    setMode(example.mode);
   };
 
   return (
@@ -69,21 +97,33 @@ function App() {
             {/* Active Badges */}
             <div className="flex flex-wrap gap-3 mb-8">
               <motion.div
-                key={strength}
+                key={mode}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest"
+                className="px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-blue-500/5"
               >
-                {strength}
+                {mode}
               </motion.div>
               <motion.div
                 key={tone}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-bold uppercase tracking-widest"
+                className="px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-purple-500/5"
               >
                 {tone}
               </motion.div>
+              <motion.div
+                key={strength}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-indigo-500/5"
+              >
+                {strength}
+              </motion.div>
+            </div>
+
+            <div className="mb-10">
+               <ModeSelector activeMode={mode} onChange={setMode} />
             </div>
 
             <SettingsPanel
@@ -95,14 +135,34 @@ function App() {
             />
 
             <div className="mb-10">
-              <AnalyticsGrid text={input} title="Current Input Stats" />
+              <div className="flex items-center justify-between mb-4">
+                <AnalyticsGrid text={input} title="Current Input Stats" />
+              </div>
+
+              {/* Quick Examples */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold flex items-center gap-1.5 mr-2">
+                  <MousePointer2 size={12} />
+                  Try it:
+                </span>
+                {EXAMPLES.map((ex) => (
+                  <button
+                    key={ex.label}
+                    onClick={() => fillExample(ex)}
+                    className="px-3 py-1 text-[10px] font-bold text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 border border-white/5 rounded-full transition-all duration-200"
+                  >
+                    {ex.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <TextInput
               value={input}
               onChange={setInput}
-              onHumanize={handleHumanize}
+              onHumanize={handleProcess}
               isLoading={isLoading}
+              mode={mode}
             />
 
             {error && (
@@ -119,7 +179,14 @@ function App() {
 
           <AnimatePresence mode="wait">
             {output && (
-              <ComparisonView key="comparison" original={input} humanized={output} />
+              <ComparisonView
+                key="comparison"
+                original={input}
+                humanized={output}
+                mode={mode}
+                tone={tone}
+                strength={strength}
+              />
             )}
           </AnimatePresence>
         </motion.main>
