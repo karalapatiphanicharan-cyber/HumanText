@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MousePointer2, Sparkles } from 'lucide-react';
+import { MousePointer2, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import Header from './components/Header';
 import TextInput from './components/TextInput';
 import ComparisonView from './components/ComparisonView';
@@ -258,12 +258,29 @@ function App() {
 
             {error && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="mt-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center space-x-3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-8 p-6 rounded-3xl bg-red-500/5 border border-red-500/20 backdrop-blur-md relative overflow-hidden"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                <span>{error}</span>
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <AlertCircle size={48} className="text-red-500" />
+                </div>
+                <div className="flex items-start space-x-4 relative z-10">
+                  <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <AlertCircle size={20} className="text-red-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-red-400 font-bold mb-1">Service Error</h4>
+                    <p className="text-red-400/80 text-sm leading-relaxed mb-4">{error}</p>
+                    <button
+                      onClick={handleProcess}
+                      className="flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      <RefreshCw size={14} />
+                      <span>Retry Request</span>
+                    </button>
+                  </div>
+                </div>
               </motion.div>
             )}
           </div>

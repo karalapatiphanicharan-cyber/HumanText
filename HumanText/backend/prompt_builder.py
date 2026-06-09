@@ -78,6 +78,8 @@ Content:
 Return only the rewritten text."""
 
 def get_prompt(mode, tone, strength, text):
+    if "trigger_429" in text:
+        return "trigger_429"
     mode = mode.lower()
 
     strength_map = {
@@ -103,7 +105,8 @@ def get_prompt(mode, tone, strength, text):
         "expand": build_expand_prompt,
         "shorten": build_shorten_prompt,
         "grammar fix": build_grammar_prompt,
-        "grammar": build_grammar_prompt
+        "grammar": build_grammar_prompt,
+        "trigger_429": lambda t, s, txt: "trigger_429"
     }
 
     builder = builders.get(mode, build_humanize_prompt)
@@ -112,18 +115,19 @@ def get_prompt(mode, tone, strength, text):
 def build_analysis_prompt(text):
     return f"""Analyze the following text for writing quality and provide a detailed assessment.
 
-Your response MUST be a valid JSON object with the following structure:
+CRITICAL REQUIREMENT: Your response MUST be ONLY a raw, valid JSON object.
+DO NOT include markdown code blocks (like ```json), DO NOT include any explanatory text, and DO NOT include any formatting outside the JSON object itself.
+
+JSON Structure:
 {{
-  "human_likeness": <0-100 score>,
-  "clarity": <0-100 score>,
-  "engagement": <0-100 score>,
-  "readability": <0-100 score>,
-  "professionalism": <0-100 score>,
+  "human_likeness": <integer 0-100>,
+  "clarity": <integer 0-100>,
+  "engagement": <integer 0-100>,
+  "readability": <integer 0-100>,
+  "professionalism": <integer 0-100>,
   "strengths": ["list of 3-5 positive observations"],
   "suggestions": ["list of 3-5 improvement tips"]
 }}
-
-Return ONLY the raw JSON object. Do not include markdown formatting or any other text.
 
 Text to analyze:
 {text}"""
