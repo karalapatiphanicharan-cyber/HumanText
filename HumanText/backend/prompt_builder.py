@@ -78,8 +78,6 @@ Content:
 Return only the rewritten text."""
 
 def get_prompt(mode, tone, strength, text):
-    if "trigger_429" in text:
-        return "trigger_429"
     mode = mode.lower()
 
     strength_map = {
@@ -106,7 +104,6 @@ def get_prompt(mode, tone, strength, text):
         "shorten": build_shorten_prompt,
         "grammar fix": build_grammar_prompt,
         "grammar": build_grammar_prompt,
-        "trigger_429": lambda t, s, txt: "trigger_429"
     }
 
     builder = builders.get(mode, build_humanize_prompt)
