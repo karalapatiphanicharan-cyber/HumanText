@@ -26,9 +26,6 @@ class GeminiService:
 
     async def generate_content(self, prompt: str) -> str:
         if not self.model:
-            # Force 429 for error handling verification if prompt starts with "trigger_429"
-            if "trigger_429" in prompt:
-                raise HTTPException(status_code=429, detail="API rate limit exceeded. Please try again in a moment.")
             # Fallback for verification/dev when API key is missing
             return "[MOCK] This is a mock humanized response because GEMINI_API_KEY is missing."
 

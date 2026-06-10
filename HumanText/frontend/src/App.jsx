@@ -3,12 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MousePointer2, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import Header from './components/Header';
 import TextInput from './components/TextInput';
-import ComparisonView from './components/ComparisonView';
+import OutputBox from './components/OutputBox';
 import AnalyticsGrid from './components/AnalyticsGrid';
 import SettingsPanel from './components/SettingsPanel';
 import ModeSelector from './components/ModeSelector';
 import AnalysisDashboard from './components/AnalysisDashboard';
-import AnalysisHistory from './components/AnalysisHistory';
 import { humanizeText, analyzeText } from './services/api';
 
 const EXAMPLES = [
@@ -39,19 +38,6 @@ function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState('');
   const [analysis, setAnalysis] = useState(null);
-  const [history, setHistory] = useState([]);
-
-  // Load history on mount
-  useEffect(() => {
-    const savedHistory = localStorage.getItem('human_text_history');
-    if (savedHistory) {
-      try {
-        setHistory(JSON.parse(savedHistory));
-      } catch (e) {
-        console.error('Failed to parse history', e);
-      }
-    }
-  }, []);
 
   const handleProcess = async () => {
     if (!input.trim()) return;
@@ -69,30 +55,6 @@ function App() {
       const analysisData = await analyzeText(data.humanized_text);
       setAnalysis(analysisData);
 
-      // Save to history
-      const overallScore = Math.round(
-        (analysisData.human_likeness +
-          analysisData.clarity +
-          analysisData.engagement +
-          analysisData.readability +
-          analysisData.professionalism) / 5
-      );
-
-      const newHistoryItem = {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        mode,
-        overallScore,
-        originalText: input,
-        rewrittenText: data.humanized_text,
-        analysis: analysisData,
-        settings: { tone, strength }
-      };
-
-      const updatedHistory = [newHistoryItem, ...history].slice(0, 5);
-      setHistory(updatedHistory);
-      localStorage.setItem('human_text_history', JSON.stringify(updatedHistory));
-
       // Smooth scroll to results
       setTimeout(() => {
         const resultsEl = document.getElementById('results-section');
@@ -106,19 +68,6 @@ function App() {
       setIsLoading(false);
       setIsAnalyzing(false);
     }
-  };
-
-  const handleHistorySelect = (item) => {
-    setInput(item.originalText);
-    setOutput(item.rewrittenText);
-    setAnalysis(item.analysis);
-    setMode(item.mode);
-    setTone(item.settings?.tone || 'professional');
-    setStrength(item.settings?.strength || 'medium');
-
-    setTimeout(() => {
-      document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
   };
 
   const handleExport = () => {
@@ -289,7 +238,7 @@ function App() {
             <AnimatePresence mode="wait">
               {output && (
                 <div className="space-y-12">
-                  <ComparisonView
+                  <OutputBox
                     key="comparison"
                     original={input}
                     humanized={output}
@@ -325,19 +274,6 @@ function App() {
               )}
             </AnimatePresence>
           </div>
-
-          {history.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="pt-12 border-t border-white/5"
-            >
-              <AnalysisHistory
-                history={history}
-                onSelect={handleHistorySelect}
-              />
-            </motion.div>
-          )}
         </motion.main>
 
         <footer className="mt-24 text-center text-slate-600 text-sm font-medium tracking-wide">
